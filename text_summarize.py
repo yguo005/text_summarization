@@ -28,12 +28,13 @@ Dataset: https://huggingface.co/datasets/knkarthick/samsum
 !pip install protobuf>=3.20.0
 !pip install --upgrade fsspec>=2023.1.0
 
-# Download NLTK data: #A pre-trained model that helps NLTK tokenize text into sentences. The ROUGE metric, which is used to evaluate the quality of a summary, works best when it compares summaries sentence by sentence.
+# Download NLTK data: A pre-trained model that helps NLTK tokenize text into sentences. The ROUGE metric, which is used to evaluate the quality of a summary, works best when it compares summaries sentence by sentence.
 import nltk
 nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
-print(" All packages installed successfully!")
+print("All packages installed successfully!")
 
 
 import os
@@ -204,7 +205,10 @@ class SAMSumSummarizer:
     def compare_pretrained_models(self):
         print(" Compare Pre-trained Models")
 
-        # Select a sample dialogue for testing
+        # .select([0]) creates a new dataset containing only the item at index 0
+        # [0] then extracts that single item as a dictionary with 'dialogue' and 'summary' keys
+        # Example: If the test set has items like [{'dialogue': 'Hi John...', 'summary': 'Brief chat'}, ...]
+        # then sample will be {'dialogue': 'Hi John...', 'summary': 'Brief chat'}
         sample = self.dataset['test'].select([0])[0]
         dialogue = sample['dialogue']
         reference_summary = sample['summary']
@@ -464,9 +468,8 @@ class SAMSumSummarizer:
     # use t5-small for efficiency in fine tuning
     def setup_fine_tuning(self, model_name='t5-small', max_input_length=256, max_target_length=64):
         print("\n" + "="*60)
-        print(" SETTING UP FINE-TUNING FOR GOOGLE COLAB")
         print("="*60)
-        print(f" Chosen model: {model_name} (optimized for Colab)")
+        print(f" Chosen model: {model_name}")
 
         # Clear any existing models from memory
         gc.collect()
@@ -494,6 +497,18 @@ class SAMSumSummarizer:
     def preprocess_dataset(self):
         print(f"\n Preprocessing dataset for {self.model_name}")
 
+        # Filter out None values from the dataset first
+        def filter_none_values(example):
+            return (example['dialogue'] is not None and 
+                    example['summary'] is not None and
+                    str(example['dialogue']).strip() != '' and
+                    str(example['summary']).strip() != '')
+
+        print("   Filtering out None and empty values")
+        self.dataset['train'] = self.dataset['train'].filter(filter_none_values)
+        self.dataset['validation'] = self.dataset['validation'].filter(filter_none_values)
+        self.dataset['test'] = self.dataset['test'].filter(filter_none_values)
+
         # The "summarize: " prefix tells the T5 model that this is a text summarization task
         prefix = "summarize: "
 
@@ -501,8 +516,11 @@ class SAMSumSummarizer:
         Tokenize dialogues and summaries for T5-small training.
         """
         def preprocess_function(examples):
-            # Add T5 prefix to dialogues
-            inputs = [prefix + dialogue for dialogue in examples["dialogue"]]
+            # Add T5 prefix to dialogues, handling None values
+            inputs = [prefix + (dialogue if dialogue is not None else "") for dialogue in examples["dialogue"]]
+            
+            # Filter out None summaries and convert to strings
+            summaries = [summary if summary is not None else "" for summary in examples["summary"]]
 
             # Tokenize inputs
             # Source: https://huggingface.co/docs/transformers/tasks/summarization#preprocess
@@ -515,7 +533,7 @@ class SAMSumSummarizer:
             
             # Tokenize targets (summaries)
             labels = self.tokenizer(
-                text_target=examples["summary"],
+                text_target=summaries,
                 max_length=self.max_target_length,
                 truncation=True,
                 padding=False
@@ -567,26 +585,26 @@ class SAMSumSummarizer:
         return self.tokenized_datasets
 
     """
-    Part 5c: Set up training arguments optimized for T5-small on Google Colab.
+    Part 5c: Set up training arguments optimized for T5-small 
     """
     def setup_training_arguments(self, output_dir="./samsum-t5-finetuned", num_epochs=1, batch_size=4):
         """
-        Optimized training arguments for Google Colab efficiency
+        Optimized training arguments for efficiency
         """
-        print(f"\n Setting up training arguments for T5-small on Google Colab")
+        print(f"\n Setting up training arguments for T5-small ")
 
-        # Create training arguments optimized for T5-small on Colab
+        # Create training arguments optimized for T5-small 
         # source Seq2SeqTrainingArguments: set_inital_training_value :https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Seq2SeqTrainingArguments
         self.training_args = Seq2SeqTrainingArguments(
             output_dir=output_dir,
             
-            # Training hyperparameters (optimized for Colab)
+            # Training hyperparameters 
             num_train_epochs=num_epochs,  # Reduced from 3 to 1 for faster training
             learning_rate=3e-4,  # Slightly higher learning rate for faster convergence
             weight_decay=0.01,
             warmup_steps=100,  # Reduced warmup steps
 
-            # Batch sizes (optimized for Colab memory)
+            # Batch sizes (optimized for memory)
             per_device_train_batch_size=batch_size,  # Increased from 2 to 4
             per_device_eval_batch_size=batch_size,
             gradient_accumulation_steps=2,  # Reduced from 4 to 2
@@ -683,10 +701,10 @@ class SAMSumSummarizer:
         return compute_metrics
     
     """
-    Part 5c: Train T5-small on the SAMSum corpus (optimized for Colab).
+    Part 5c: Train T5-small on the SAMSum corpus .
     """
     def fine_tune_model(self):
-        print(f"\nStarting T5-small fine-tuning process (optimized for Colab)")
+        print(f"\nStarting T5-small fine-tuning process ")
 
         # Create data collator
         data_collator = DataCollatorForSeq2Seq(
@@ -901,7 +919,7 @@ class SAMSumSummarizer:
             # Step 2: Preprocess dataset
             self.preprocess_dataset()
             
-            # Step 3: Setup training arguments (optimized for Colab)
+            # Step 3: Setup training arguments 
             self.setup_training_arguments(batch_size=2, num_epochs=1)
             
             # Step 4: Setup metrics
