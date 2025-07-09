@@ -127,21 +127,13 @@ class SAMSumSummarizer:
         # Extract texts
         train_data = self.dataset['train']
         
-        # Example of what 'item' looks like:
-        # item = {
-        #     'id': '13818513',
-        #     'dialogue': 'Amanda: I baked  cookies. Do you want some?\nJerry: Sure!\nAmanda: I'll bring you tomorrow :-)',
-        #     'summary': 'Amanda baked cookies and will bring Jerry some tomorrow.'
-        # }
-        # 
-        # So item['dialogue'] would return:
-        # 'Amanda: I baked  cookies. Do you want some?\nJerry: Sure!\nAmanda: I'll bring you tomorrow :-)'
-        dialogues = [item['dialogue'] for item in train_data]
-        summaries = [item['summary'] for item in train_data]
+        # Filter out None values and convert to strings
+        dialogues = [str(item['dialogue']) for item in train_data if item['dialogue'] is not None]
+        summaries = [str(item['summary']) for item in train_data if item['summary'] is not None]
 
         # Calculate lengths (in words)
-        dialogue_lengths = [len(text.split()) for text in dialogues]
-        summary_lengths = [len(text.split()) for text in summaries]
+        dialogue_lengths = [len(text.split()) for text in dialogues if text and text != 'None']
+        summary_lengths = [len(text.split()) for text in summaries if text and text != 'None']
 
         # Create plots
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
@@ -175,12 +167,11 @@ class SAMSumSummarizer:
     Part 2c: Display the 20 most common words in dialogues.
     """
     def analyze_vocabulary(self):
-        print("\n Anayze vocabulary")
+        print("\n Analyze vocabulary")
 
-        
-        # Join all dialogues into one string for analysis
-        # This will create: "Amanda: I baked cookies. Do you want some?\nJerry: Sure! Bob: How are you?\nAlice: I'm fine, thanks!"
-        all_dialogues = ' '.join([item['dialogue'] for item in self.dataset['train']])
+        # Join all dialogues into one string for analysis, filtering out None values
+        dialogues = [str(item['dialogue']) for item in self.dataset['train'] if item['dialogue'] is not None]
+        all_dialogues = ' '.join(dialogues)
 
         # Clean and tokenize
         # Remove speaker names (text before colon and the colon itself) from each line
