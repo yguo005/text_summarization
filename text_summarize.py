@@ -205,7 +205,7 @@ class SAMSumSummarizer:
         print(" Compare Pre-trained Models")
 
         # Select a sample dialogue for testing
-        sample = self.dataset['test'][0]
+        sample = self.dataset['test'].select([0])[0]
         dialogue = sample['dialogue']
         reference_summary = sample['summary']
 
@@ -367,8 +367,8 @@ class SAMSumSummarizer:
         print(" Baseline vs Models Comparison")
         print("="*60)
 
-        # Get test samples
-        test_samples = self.dataset['test'][:num_samples]
+        # Get test samples using select method instead of slicing
+        test_samples = self.dataset['test'].select(range(num_samples))
 
         # Extract dialogues and reference summaries
         dialogues = [sample['dialogue'] for sample in test_samples]
