@@ -1,0 +1,42 @@
+In this assignment, you will gain hands-on experience with the Hugging Face Transformers
+library by solving a text summarization task. Text summarization is one of the most chal-
+lenging NLP tasks as it requires a range of abilities, such as understanding long passages and
+generating coherent text that captures the main points in a document.
+In this assignment, you will compare several pre-trained models from the Hugging Face
+model hub on text summarization and then fine-tune one of them on a custom dataset. The
+dataset you will use for this task is the SAMSum corpus developed by Samsung, which contains
+about 16,000 messenger-like dialogues and their corresponding summaries.
+1. Read the Hugging Face summarization task guide.
+2. Exploratory Data Analysis:
+(a) Conduct an initial exploration of the SAMSum dataset to gain insights into the
+characteristics of the dialogues and summaries.
+(b) Plot the length distribution of dialogues and summaries in the training set.
+(c) Display the 20 most common words in the dialogues and their frequencies.
+3. Inference with Pre-trained Models:
+(a) Choose at least three pre-trained summarization models from the Hugging Face
+model hub, such as facebook/bart-large-cnn or t5-large.
+(b) Use the models to generate summaries for a few randomly selected dialogues. An-
+alyze the quality of these summaries: Are they coherent? Do they capture the
+essential points in the conversation?
+4. Define a Baseline:
+(a) Define a baseline that simply takes the first three sentences of the dialogue, often
+called the lead-3 baseline. You can use the sent_tokenize function in NLTK to
+split the text into sentences.
+(b) Compare the performance of the lead-3 baseline with the pre-trained models on
+the same dialogues using the ROUGE score.
+5. Fine-Tuning:
+(a) Choose one of the pre-trained summarization models from the previous part.
+(b) Preprocess the dataset to fit it to the input format required by the chosen model,
+which may include tokenizing the dialogues and their summaries.
+(c) Train the model on the SAMSum corpus, monitoring its performance on the vali-
+dation set, and adjust the hyperparameters as needed.
+
+(d) Employ appropriate metrics for evaluating summarization quality, such as ROUGE
+scores, which compare the generated summaries against the reference summaries.
+6. Evaluation and Analysis:
+(a) Evaluate the fine-tuned model’s performance on the test set both quantitatively
+(using ROUGE score) and qualitatively (by inspecting the generated summaries).
+(b) Compare these results to the model’s pre-fine-tuning performance using the same
+dialogues to assess the impact of the fine-tuning.
+7. Write a short report covering the model choice, dataset preparation, fine-tuning process,
+and an analysis of the summarization performance before and after fine-tuning.
