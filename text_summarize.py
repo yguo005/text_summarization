@@ -584,7 +584,6 @@ class SAMSumSummarizer:
             max_grad_norm=1.0,
             
             # Early stopping patience
-            load_best_model_at_end=True,
         )
 
         print(f" Training arguments configured for T5-small:")
