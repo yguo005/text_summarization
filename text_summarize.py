@@ -26,6 +26,7 @@ Dataset: https://huggingface.co/datasets/knkarthick/samsum
 !pip install accelerate>=0.20.0
 !pip install sentencepiece>=0.1.97
 !pip install protobuf>=3.20.0
+!pip install --upgrade fsspec>=2023.1.0
 
 # Download NLTK data: #A pre-trained model that helps NLTK tokenize text into sentences. The ROUGE metric, which is used to evaluate the quality of a summary, works best when it compares summaries sentence by sentence.
 import nltk
@@ -238,19 +239,27 @@ class SAMSumSummarizer:
         # Part 3(b): Analyze the quality of summaries
         print(f"\n QUALITY ANALYSIS:")
         print("="*60)
-        print("📝 Analyzing coherence and essential point capture:")
+        print(" Analyzing coherence and essential point capture:")
         
         for model, summary in results.items():
             if summary != "Error during generation":
-                print(f"\n🤖 {model}:")
+                print(f"\n {model}:")
                 print(f"   Summary: {summary}")
                 
                 # Basic quality checks
+                # Example: if summary = "John and Mary discussed dinner plans for tonight."
+                # len(summary.split()) = 8 words (> 5) and summary.count('.') = 1 (<= 3) → "High"
+                # if summary = "Yes." then len = 1 word (< 5) → "Medium"
                 coherence_score = "High" if len(summary.split()) > 5 and summary.count('.') <= 3 else "Medium"
+                
+                # Example: if dialogue starts with "John: Hey Mary, want to grab dinner tonight?"
+                # dialogue.lower().split()[:10] = ["john:", "hey", "mary,", "want", "to", "grab", "dinner", "tonight?"]
+                # if summary contains "dinner" → essential_points = "Good"
+                # if summary = "They talked." and doesn't contain key words → "Needs improvement"
                 essential_points = "Good" if any(word in summary.lower() for word in dialogue.lower().split()[:10]) else "Needs improvement"
                 
-                print(f"   📊 Coherence: {coherence_score}")
-                print(f"   🎯 Essential Points: {essential_points}")
+                print(f"    Coherence: {coherence_score}")
+                print(f"    Essential Points: {essential_points}")
             
         return results
     
@@ -582,8 +591,7 @@ class SAMSumSummarizer:
             
             # Memory optimization
             max_grad_norm=1.0,
-            
-            # Early stopping patience
+          
         )
 
         print(f" Training arguments configured for T5-small:")
