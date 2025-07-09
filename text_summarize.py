@@ -38,6 +38,8 @@ print("All packages installed successfully!")
 
 
 import os
+os.environ["WANDB_DISABLED"] = "true"
+os.environ["WANDB_MODE"] = "disabled"
 import re
 import numpy as np
 import pandas as pd
@@ -669,21 +671,43 @@ class SAMSumSummarizer:
         def compute_metrics(eval_pred):
             predictions, labels = eval_pred
             
-            # Decode predictions and labels
-            # Source: https://huggingface.co/docs/transformers/main_classes/tokenizer#transformers.PreTrainedTokenizer.batch_decode
-            decoded_preds = self.tokenizer.batch_decode(predictions, skip_special_tokens=True)
+            # Handle predictions - they might be logits, so take argmax if needed
+            if predictions.ndim == 3:
+                predictions = np.argmax(predictions, axis=-1)
             
-            # Replace -100 in labels (they can't be decoded)
-            # -100 is the default ignore_index for CrossEntropyLoss in PyTorch
-            # Source: https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
-            labels = np.where(labels != -100, labels, self.tokenizer.pad_token_id)
-            decoded_labels = self.tokenizer.batch_decode(labels, skip_special_tokens=True)
+            # Clean predictions: remove padding tokens and invalid values
+            cleaned_predictions = []
+            for pred in predictions:
+                # Filter out pad tokens and invalid values
+                cleaned_pred = [token for token in pred if token >= 0 and token < self.tokenizer.vocab_size]
+                cleaned_predictions.append(cleaned_pred)
+            
+            # Decode predictions
+            decoded_preds = self.tokenizer.batch_decode(cleaned_predictions, skip_special_tokens=True)
+            
+            # Clean labels: replace -100 with pad token and filter invalid values
+            cleaned_labels = []
+            for label in labels:
+                # Replace -100 with pad token ID and filter out invalid values
+                cleaned_label = [self.tokenizer.pad_token_id if token == -100 else token for token in label]
+                cleaned_label = [token for token in cleaned_label if token >= 0 and token < self.tokenizer.vocab_size]
+                cleaned_labels.append(cleaned_label)
+            
+            # Decode labels
+            decoded_labels = self.tokenizer.batch_decode(cleaned_labels, skip_special_tokens=True)
             
             # ROUGE expects newline-separated sentences for proper evaluation
-            # Source: https://huggingface.co/spaces/evaluate-metric/rouge
-            # Source: https://www.nltk.org/api/nltk.tokenize.html#nltk.tokenize.sent_tokenize
-            decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds]
-            decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels]
+            decoded_preds = ["\n".join(sent_tokenize(pred.strip())) for pred in decoded_preds if pred.strip()]
+            decoded_labels = ["\n".join(sent_tokenize(label.strip())) for label in decoded_labels if label.strip()]
+            
+            # Make sure we have equal length lists
+            min_length = min(len(decoded_preds), len(decoded_labels))
+            decoded_preds = decoded_preds[:min_length]
+            decoded_labels = decoded_labels[:min_length]
+            
+            # Skip ROUGE computation if no valid predictions
+            if not decoded_preds or not decoded_labels:
+                return {"rouge1": 0.0, "rouge2": 0.0, "rougeL": 0.0}
             
             # Compute ROUGE scores
             # Source: https://huggingface.co/spaces/evaluate-metric/rouge
