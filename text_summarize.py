@@ -601,22 +601,22 @@ class SAMSumSummarizer:
             output_dir=output_dir,
             
             # Training hyperparameters 
-            num_train_epochs=num_epochs,  # Reduced from 3 to 1 for faster training
+            num_train_epochs=num_epochs,  # Reduced from 3 to 1 meaning the model will go through the entire training dataset once.
             learning_rate=3e-4,  # Slightly higher learning rate for faster convergence
             weight_decay=0.01,
             warmup_steps=100,  # Reduced warmup steps
 
             # Batch sizes (optimized for memory)
-            per_device_train_batch_size=batch_size,  # Increased from 2 to 4
+            per_device_train_batch_size=batch_size,  # how many samples are processed at once, Increased from 2 to 4
             per_device_eval_batch_size=batch_size,
-            gradient_accumulation_steps=2,  # Reduced from 4 to 2
+            gradient_accumulation_steps=2,  # allows the model to effectively use a larger batch size (4 * 2 = 8) without running out of memory
             
             # Evaluation and saving (optimized for speed)
             eval_strategy="steps",  # Changed from "epoch" to "steps"
             eval_steps=500,  # Evaluate every 500 steps
             save_strategy="steps",
             save_steps=500,
-            save_total_limit=1,  # Keep only 1 checkpoint to save space
+            save_total_limit=1,  # Keep 1 only the single best checkpoint is kept
             load_best_model_at_end=True,
             metric_for_best_model="rouge1",
             greater_is_better=True,
@@ -639,7 +639,7 @@ class SAMSumSummarizer:
             
             # Reproducibility
             # Source: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments.seed
-            seed=42,
+            seed=42, # make sure if run the same script many times, get same results, ramdonness includes: initial weights of the mode, data is shffled before being fed in model, dropout random deactivate neurons
             
             # Memory optimization
             max_grad_norm=1.0,
@@ -737,17 +737,17 @@ class SAMSumSummarizer:
             padding=True
         )
 
-        # Create Trainer
+        # Create Trainer fine_tune_model
         
         # Source: https://huggingface.co/docs/transformers/tasks/summarization#train
         self.trainer = Seq2SeqTrainer(
             model=self.model,
             args=self.training_args,
             train_dataset=self.tokenized_datasets["train"],
-            eval_dataset=self.tokenized_datasets["validation"],
+            eval_dataset=self.tokenized_datasets["validation"], # fine tune
             tokenizer=self.tokenizer,
             data_collator=data_collator,
-            compute_metrics=self.compute_metrics
+            compute_metrics=self.compute_metrics # fine tune
         )
 
         # Start training
