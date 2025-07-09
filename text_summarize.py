@@ -610,7 +610,7 @@ class SAMSumSummarizer:
             gradient_accumulation_steps=2,  # Reduced from 4 to 2
             
             # Evaluation and saving (optimized for speed)
-            evaluation_strategy="steps",  # Changed from "epoch" to "steps"
+            eval_strategy="steps",  # Changed from "epoch" to "steps"
             eval_steps=500,  # Evaluate every 500 steps
             save_strategy="steps",
             save_steps=500,
@@ -910,7 +910,7 @@ class SAMSumSummarizer:
             baseline_comparison = self.compare_baseline_with_models()
             
             # Part 5: Fine-tuning 
-            print("\n PART 5: FINE-TUNING (Required)")
+            print("\n PART 5: FINE-TUNING ")
            
             
             # Step 1: Setup fine-tuning with t5-small for efficiency
