@@ -46,7 +46,7 @@ from collections import Counter
 import gc
 
 # Hugging Face
-from datasets import load_dataset
+from datasets import Dataset, DatasetDict
 import torch
 from transformers import pipeline, AutoTokenizer, AutoModelForSeq2SeqLM
 from transformers import Seq2SeqTrainingArguments, Seq2SeqTrainer, DataCollatorForSeq2Seq
@@ -60,11 +60,52 @@ A comprehensive analyzer for the SAMSum dataset and text summarization models.
 class SAMSumSummarizer:
     
     def __init__(self):
-        """Initialize the analyzer and load the dataset."""
-        print("Loading SAMSum dataset...")
-        self.dataset = load_dataset("knkarthick/samsum")
+        """Initialize the analyzer and load the dataset from CSV files."""
+        print("Loading SAMSum dataset from local CSV files...")
+        
+        # Load CSV files from the same directory as the script
+        try:
+            # Load the CSV files
+            train_df = pd.read_csv('train.csv')
+            test_df = pd.read_csv('test.csv')
+            validation_df = pd.read_csv('validation.csv')
+            
+            # Convert pandas DataFrames to Hugging Face Dataset format
+            train_dataset = Dataset.from_pandas(train_df)
+            test_dataset = Dataset.from_pandas(test_df)
+            validation_dataset = Dataset.from_pandas(validation_df)
+            
+            # Create DatasetDict
+            self.dataset = DatasetDict({
+                'train': train_dataset,
+                'test': test_dataset,
+                'validation': validation_dataset
+            })
+            
+            print(f"Successfully loaded dataset from CSV files!")
+            print(f"   Training samples: {len(self.dataset['train'])}")
+            print(f"   Validation samples: {len(self.dataset['validation'])}")
+            print(f"   Test samples: {len(self.dataset['test'])}")
+            
+        except FileNotFoundError as e:
+            print(f"Error: Could not find CSV files in the current directory.")
+            print(f"   Error details: {e}")
+            raise
+        except Exception as e:
+            print(f"Error loading dataset: {e}")
+            raise
+        
         self.stop_words = set(stopwords.words('english'))
         print(f"Dataset structure: {self.dataset}")
+        
+        # Display sample data to verify format
+        print(f"Sample data format:")
+        sample = self.dataset['train'][0]
+        print(f"   Columns: {list(sample.keys())}")
+        if 'dialogue' in sample and 'summary' in sample:
+            print(f"   Required columns found: 'dialogue' and 'summary'")
+        else:
+            print(f"   Warning: Expected 'dialogue' and 'summary' columns")
     
     """
     Part 2a: Conduct initial exploration of the SAMSum dataset.
