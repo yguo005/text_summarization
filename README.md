@@ -109,7 +109,6 @@ comparison = analyzer.compare_before_after_finetuning()
 |-------|---------|---------|---------|-------------|
 | Lead-3 Baseline | 0.3245 | 0.1156 | 0.2834 | - |
 | T5-Large (Pre-trained) | 0.4521 | 0.2187 | 0.3998 | +39.3% |
-| BART-Large-CNN | 0.4687 | 0.2301 | 0.4123 | +44.4% |
 | **T5-Small (Fine-tuned)** | **0.4892** | **0.2456** | **0.4287** | **+50.7%** |
 
 ##  Key Implementation Details
